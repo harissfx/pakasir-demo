@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Demo Pakasir</title>
+</head>
+<body>
+  <h1>Demo Pembayaran Pakasir</h1>
+
+  <form id="checkoutForm">
+    <label>Nominal (Rp):</label><br>
+    <input type="number" id="amount" min="1000" value="10000" required><br><br>
+
+    <label>Metode Pembayaran:</label><br>
+    <select id="method">
+      <option value="qris">QRIS</option>
+      <option value="bni_va">BNI Virtual Account</option>
+      <option value="bri_va">BRI Virtual Account</option>
+    </select><br><br>
+
+    <button type="submit">Bayar Sekarang</button>
+  </form>
+
+  <p id="status"></p>
+
+  <script>
+    const form = document.getElementById('checkoutForm');
+    const statusEl = document.getElementById('status');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusEl.textContent = 'Membuat transaksi...';
+
+      const amount = Number(document.getElementById('amount').value);
+      const method = document.getElementById('method').value;
+
+      try {
+        const res = await fetch('/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount, method })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          statusEl.textContent = 'Gagal: ' + (data.error || 'unknown error');
+          return;
+        }
+
+        if (!data.payment_url) {
+          statusEl.textContent = 'Transaksi dibuat tapi payment_url kosong. Cek log server.';
+          return;
+        }
+
+        statusEl.textContent = 'Transaksi dibuat, mengarahkan ke halaman pembayaran...';
+
+        // Arahkan user ke halaman pembayaran Pakasir (QRIS/VA)
+        window.location.href = data.payment_url;
+      } catch (err) {
+        statusEl.textContent = 'Terjadi kesalahan: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
